@@ -1,4 +1,5 @@
-import { IsOptional, IsString } from 'class-validator';
+import { IsNumber, IsOptional, IsString } from 'class-validator';
+
 export class CreateRecipeDto {
   @IsString()
   title: string;
@@ -12,4 +13,7 @@ export class CreateRecipeDto {
 
   @IsString()
   instructions: string;
+
+  @IsNumber()
+  userId: number;
 }

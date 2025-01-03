@@ -1,6 +1,7 @@
 import { PartialType } from '@nestjs/swagger';
 import { CreateRecipeDto } from './create-recipe.dto';
-import { IsOptional, IsString } from 'class-validator';
+import { IsNumber, IsOptional, IsString } from 'class-validator';
+
 export class UpdateRecipeDto extends PartialType(CreateRecipeDto) {
   @IsString()
   @IsOptional()
@@ -17,4 +18,8 @@ export class UpdateRecipeDto extends PartialType(CreateRecipeDto) {
   @IsString()
   @IsOptional()
   instructions: string;
+
+  @IsNumber()
+  @IsOptional()
+  userId: number;
 }

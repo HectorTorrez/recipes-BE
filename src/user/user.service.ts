@@ -4,12 +4,54 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { Prisma } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
+import { JwtService } from '@nestjs/jwt';
+import { LoginUserDto } from './dto/login-user.dto';
 @Injectable()
 export class UserService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly jwtService: JwtService,
+  ) {}
 
-  async create(createUserDto: CreateUserDto) {
+  async login(user: LoginUserDto) {
+    if (!user.email || !user.password) {
+      throw new HttpException(
+        'Invalid email or password',
+        HttpStatus.UNAUTHORIZED,
+      );
+    }
+    const userResponse = await this.prisma.user.findUnique({
+      where: {
+        email: user.email,
+      },
+    });
+    if (!userResponse) {
+      throw new HttpException(
+        'Invalid email or password',
+        HttpStatus.UNAUTHORIZED,
+      );
+    }
+    const isPasswordCorrect = await bcrypt.compare(
+      user.password,
+      userResponse.password,
+    );
+    if (!isPasswordCorrect) {
+      throw new HttpException(
+        'Invalid email or password',
+        HttpStatus.UNAUTHORIZED,
+      );
+    }
+    const payload = {
+      sub: userResponse.id,
+      email: userResponse.email,
+    };
+    const accessToken = this.jwtService.sign(payload);
+    delete userResponse.password;
+    return { accessToken, userResponse };
+  }
+  async register(createUserDto: CreateUserDto) {
     const { password, ...user } = createUserDto;
+
     const hashedPassword = await bcrypt.hash(password, 10);
     try {
       return await this.prisma.user.create({
@@ -25,7 +67,6 @@ export class UserService {
       });
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError) {
-        // Unique constraint failed
         if (error.code === 'P2002') {
           throw new HttpException(
             'User email must be unique',
@@ -42,18 +83,40 @@ export class UserService {
   }
 
   findAll() {
-    return `This action returns all user`;
+    return this.prisma.user.findMany();
   }
 
   findOne(id: number) {
-    return `This action returns a #${id} user`;
+    return this.prisma.user.findUnique({
+      where: {
+        id,
+      },
+    });
   }
 
-  update(id: number, updateUserDto: UpdateUserDto) {
-    return `This action updates a #${id} user`;
+  async update(id: number, updateUserDto: UpdateUserDto) {
+    const hashedPassword = await bcrypt.hash(updateUserDto.password, 10);
+    return this.prisma.user.update({
+      where: {
+        id,
+      },
+      data: {
+        ...updateUserDto,
+        password: hashedPassword,
+      },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+      },
+    });
   }
 
   remove(id: number) {
-    return `This action removes a #${id} user`;
+    return this.prisma.user.delete({
+      where: {
+        id,
+      },
+    });
   }
 }

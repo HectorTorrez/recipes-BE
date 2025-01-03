@@ -31,13 +31,36 @@ export class RecipeService {
   }
 
   findAll() {
-    return this.prisma.recipe.findMany();
+    return this.prisma.recipe.findMany({
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            createdAt: true,
+            updatedAt: true,
+          },
+        },
+      },
+    });
   }
 
   findOne(id: number) {
     return this.prisma.recipe.findUnique({
       where: {
         id,
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            createdAt: true,
+            updatedAt: true,
+          },
+        },
       },
     });
   }
