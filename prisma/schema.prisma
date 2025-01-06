@@ -26,6 +26,14 @@ model Recipe {
   user User @relation(fields: [userId], references: [id])
 
 }
+model ResetToken {
+  id        Int      @id @default(autoincrement())
+  email     String
+  token     String   @unique
+  isUsed    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [email], references: [email])
+}
 
 model User {
   id Int @id @default(autoincrement())
@@ -34,6 +42,6 @@ model User {
   password String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
+ resetTokens ResetToken[]
   recipes Recipe[]
 }
